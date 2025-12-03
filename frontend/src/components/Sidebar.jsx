@@ -139,6 +139,9 @@ const Sidebar = ({ collapsed = false, onToggle, isMobileOpen, onMobileClose }) =
 
   const handleConversationClick = (conversationId) => {
     navigate('/conversations', { state: { conversationId } });
+    if (isMobileOpen && onMobileClose) {
+      onMobileClose();
+    }
   };
 
   const handleMenuToggle = (event, conversationId) => {
@@ -209,10 +212,10 @@ const Sidebar = ({ collapsed = false, onToggle, isMobileOpen, onMobileClose }) =
       <aside
         className={`fixed md:relative z-50 h-full flex flex-col bg-neutral-100 text-neutral-900 border-r border-neutral-200 transition-all duration-300 
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-        ${collapsed ? 'md:w-20' : 'md:w-64'} w-64`}
+        ${collapsed ? 'md:w-20' : 'md:w-64'} w-[90%]`}
       >
         {/* Collapse toggle */}
-      <div className={`flex items-center h-12 px-2 border-b border-neutral-200 ${collapsed ? 'justify-center' : 'justify-end'}`}>
+      <div className={`hidden md:flex items-center h-12 px-2 border-b border-neutral-200 ${collapsed ? 'justify-center' : 'justify-end'}`}>
         <button
           type="button"
           onClick={isMobileOpen ? onMobileClose : onToggle}
@@ -291,6 +294,7 @@ const Sidebar = ({ collapsed = false, onToggle, isMobileOpen, onMobileClose }) =
         <NavLink
           to="/"
           state={{ resetChat: true }}
+          onClick={() => isMobileOpen && onMobileClose && onMobileClose()}
           className={({ isActive }) =>
             `${baseNavItemClasses} ${navLayoutClasses} ${
               isActive
@@ -305,6 +309,7 @@ const Sidebar = ({ collapsed = false, onToggle, isMobileOpen, onMobileClose }) =
 
         <NavLink
           to="/saved-content"
+          onClick={() => isMobileOpen && onMobileClose && onMobileClose()}
           className={({ isActive }) =>
             `${baseNavItemClasses} ${navLayoutClasses} ${
               isActive

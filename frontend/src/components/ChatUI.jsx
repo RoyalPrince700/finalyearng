@@ -170,7 +170,7 @@ const ChatUI = ({
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 bg-white">
+      <div className="flex-1 overflow-y-auto overscroll-y-contain px-4 sm:px-6 lg:px-8 py-6 space-y-6 bg-white">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-center text-neutral-500">
@@ -282,7 +282,7 @@ const ChatUI = ({
       </div>
 
       {/* Message Input */}
-      <div className="shrink-0 border-t border-neutral-200 bg-white">
+      <div className="shrink-0 border-t border-neutral-200 bg-white pb-[env(safe-area-inset-bottom)]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <form onSubmit={handleSendMessage} className="flex space-x-2">
             <input

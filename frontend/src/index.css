@@ -5,6 +5,19 @@
 @tailwind utilities;
 
 @layer base {
+  html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden; /* Prevent global scroll */
+    overscroll-behavior: none; /* Prevent pull-to-refresh on mobile */
+    position: fixed; /* Lock body in place for iOS */
+  }
+
+  #root {
+    height: 100%;
+    width: 100%;
+  }
+
   html {
     font-family: 'Inter', system-ui, sans-serif;
   }
