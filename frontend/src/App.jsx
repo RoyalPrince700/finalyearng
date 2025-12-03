@@ -12,6 +12,7 @@ import TopicGenerator from './pages/TopicGenerator';
 import ProjectEditor from './pages/ProjectEditor';
 import Chat from './pages/Chat';
 import SavedContent from './pages/SavedContent';
+import AdminDashboard from './pages/AdminDashboard';
 
 // Protected Route Component with ChatGPT-style layout
 const ProtectedRoute = ({ children }) => {
@@ -22,6 +23,15 @@ const ProtectedRoute = ({ children }) => {
   }
 
   return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
+};
+
+// Admin Route Component (No AuthenticatedLayout)
+const AdminRoute = ({ children }) => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
 };
 
 
@@ -75,6 +85,17 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Admin Route */}
+          <Route
+            path="/admin"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            }
+          />
+
           {/* Default redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

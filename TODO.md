@@ -1,4 +1,4 @@
-FinalYearNG – Dashboard AI Chat Interface Plan
+user is admin user can have its own dashboard FinalYearNG – Dashboard AI Chat Interface Plan
 =============================================
 
 Goal: Integrate the existing `ChatUI` component into the authenticated dashboard experience so that users can chat with the AI about their projects directly from the dashboard, using the existing `/api/ai/chat` backend.

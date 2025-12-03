@@ -43,6 +43,13 @@ export const authAPI = {
   getMe: () => api.get('/auth/me'),
 };
 
+export const adminAPI = {
+  getAllUsers: () => api.get('/auth/users'),
+  updateUserRole: (id, role) => api.put(`/auth/users/${id}/role`, { role }),
+  getAllProjects: () => api.get('/project/all'),
+};
+
+
 export const projectAPI = {
   getProjects: () => api.get('/project'),
   getProject: (id) => api.get(`/project/${id}`),

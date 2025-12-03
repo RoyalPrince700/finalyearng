@@ -23,6 +23,30 @@ const getProjects = async (req, res) => {
   }
 };
 
+// @desc    Get all projects (Admin)
+// @route   GET /api/project/all
+// @access  Private/Admin
+const getAllProjects = async (req, res) => {
+  try {
+    const projects = await Project.find()
+      .populate('user', 'name email department')
+      .sort({ updatedAt: -1 });
+
+    res.json({
+      success: true,
+      count: projects.length,
+      data: projects
+    });
+  } catch (error) {
+    console.error('Get all projects error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get all projects',
+      error: error.message
+    });
+  }
+};
+
 // @desc    Get single project
 // @route   GET /api/project/:id
 // @access  Private
@@ -330,5 +354,6 @@ module.exports = {
   deleteProject,
   saveDraft,
   saveProjectContent,
-  getSavedProjectContent
+  getSavedProjectContent,
+  getAllProjects
 };

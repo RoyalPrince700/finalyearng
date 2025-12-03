@@ -1,9 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LuMenu } from 'react-icons/lu';
+import { LuMenu, LuLayoutDashboard } from 'react-icons/lu';
 
 const Navbar = ({ onMenuClick }) => {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -26,18 +26,31 @@ const Navbar = ({ onMenuClick }) => {
             </button>
             <Link to="/" className="flex items-center gap-3">
               <div className="flex flex-col">
-              <span className="text-sm font-semibold leading-tight text-neutral-900">
-                FinalYearNG
-              </span>
-              <span className="text-xs text-neutral-500">
-                AI Project Assistant
-              </span>
-            </div>
-          </Link>
+                <span className="text-sm font-semibold leading-tight text-neutral-900">
+                  FinalYearNG
+                </span>
+                <span className="text-xs text-neutral-500">
+                  AI Project Assistant
+                </span>
+              </div>
+            </Link>
+          </div>
+
+          {/* Right side actions */}
+          <div className="flex items-center gap-4">
+            {user?.role === 'admin' && (
+              <Link
+                to="/admin"
+                className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-white bg-neutral-900 hover:bg-neutral-800 transition-colors"
+              >
+                <LuLayoutDashboard className="w-4 h-4" />
+                Admin Dashboard
+              </Link>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  </nav>
+    </nav>
   );
 };
 
