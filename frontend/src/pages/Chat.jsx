@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import ChatUI from '../components/ChatUI';
-import { conversationAPI, projectAPI } from '../api/api';
+import { conversationAPI, projectAPI, aiAPI } from '../api/api';
 
 const Chat = () => {
   const [currentConversation, setCurrentConversation] = useState(null);
@@ -192,37 +192,28 @@ const Chat = () => {
         content: m.content,
       }));
 
-      // Use existing AI chat endpoint to generate a reply
-      const response = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({
-          messages: payloadMessages,
-        }),
+      // Use backend AI chat endpoint via axios client (respects VITE_API_URL)
+      const response = await aiAPI.chat({
+        messages: payloadMessages,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        const aiMessage = data.data.response;
+      const aiMessage = response.data?.data?.response;
+      if (!aiMessage) return;
 
-        // Persist AI response on the conversation
-        await conversationAPI.addMessage(conversationId, {
+      // Persist AI response on the conversation
+      await conversationAPI.addMessage(conversationId, {
+        role: 'assistant',
+        content: aiMessage,
+      });
+
+      setMessages((prev) => [
+        ...prev,
+        {
           role: 'assistant',
           content: aiMessage,
-        });
-
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: 'assistant',
-            content: aiMessage,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-      }
+          timestamp: new Date().toISOString(),
+        },
+      ]);
     } catch (error) {
       console.error('Failed to get AI response:', error);
       setMessages((prev) => [
