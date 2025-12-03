@@ -50,6 +50,14 @@ export const projectAPI = {
   updateProject: (id, data) => api.put(`/project/${id}`, data),
   deleteProject: (id) => api.delete(`/project/${id}`),
   saveDraft: (id, data) => api.post(`/project/${id}/save`, data),
+  saveContent: (id, data) => api.post(`/project/${id}/saved-content`, data),
+  getSavedContent: (id) => api.get(`/project/${id}/saved-content`),
+};
+
+export const savedContentAPI = {
+  saveContent: (data) => api.post('/saved-content', data),
+  getSavedContents: (params) => api.get('/saved-content', { params }),
+  deleteSavedContent: (id) => api.delete(`/saved-content/${id}`),
 };
 
 export const aiAPI = {

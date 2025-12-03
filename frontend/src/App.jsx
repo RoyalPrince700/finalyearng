@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import TopicGenerator from './pages/TopicGenerator';
 import ProjectEditor from './pages/ProjectEditor';
 import Chat from './pages/Chat';
+import SavedContent from './pages/SavedContent';
 
 // Protected Route Component with ChatGPT-style layout
 const ProtectedRoute = ({ children }) => {
@@ -63,6 +64,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Chat />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/saved-content"
+            element={
+              <ProtectedRoute>
+                <SavedContent />
               </ProtectedRoute>
             }
           />

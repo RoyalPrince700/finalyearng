@@ -73,6 +73,22 @@ const chatMessageSchema = new mongoose.Schema({
   }
 });
 
+const savedContentSchema = new mongoose.Schema({
+  category: {
+    type: String,
+    enum: ['Preliminary', 'Chapter 1', 'Chapter 2', 'Chapter 3', 'Chapter 4', 'Chapter 5', 'Reference'],
+    required: true
+  },
+  content: {
+    type: String,
+    required: true
+  },
+  savedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const projectSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
@@ -116,6 +132,7 @@ const projectSchema = new mongoose.Schema({
   },
   // Full conversation history across overview + chapter-specific chats
   chatHistory: [chatMessageSchema],
+  savedContents: [savedContentSchema],
   status: {
     type: String,
     enum: ['draft', 'in-progress', 'completed'],

@@ -4,6 +4,7 @@ import Navbar from './Navbar';
 
 const AuthenticatedLayout = ({ children }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <div className="flex h-screen bg-neutral-100 overflow-hidden">
@@ -11,13 +12,15 @@ const AuthenticatedLayout = ({ children }) => {
       <Sidebar
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed((prev) => !prev)}
+        isMobileOpen={isMobileMenuOpen}
+        onMobileClose={() => setIsMobileMenuOpen(false)}
       />
 
       {/* Main content area scrolls independently */}
       <div className="flex-1 flex flex-col overflow-hidden bg-white">
         {/* Top navbar for authenticated pages (branding moved here) */}
         <div className="shrink-0 bg-white border-b border-neutral-200">
-          <Navbar />
+          <Navbar onMenuClick={() => setIsMobileMenuOpen(true)} />
         </div>
 
         {/* Main content - full height for chat pages */}

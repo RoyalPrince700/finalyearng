@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import ChatUI from '../components/ChatUI';
-import { conversationAPI } from '../api/api';
+import { conversationAPI, projectAPI } from '../api/api';
 
 const Chat = () => {
   const [currentConversation, setCurrentConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [projectId, setProjectId] = useState(null);
   const location = useLocation();
 
   useEffect(() => {
+    loadDefaultProject();
+    
     // Listen for conversation selection events from ConversationSidebar
     const handleConversationSelected = (event) => {
       loadConversation(event.detail.conversationId);
@@ -27,6 +30,18 @@ const Chat = () => {
       window.removeEventListener('newConversation', handleNewConversation);
     };
   }, []);
+
+  const loadDefaultProject = async () => {
+    try {
+      const response = await projectAPI.getProjects();
+      const projects = response.data.data || [];
+      if (projects.length > 0) {
+        setProjectId(projects[0]._id);
+      }
+    } catch (error) {
+      console.error('Failed to load default project for chat:', error);
+    }
+  };
 
   // Load a specific conversation when navigated to with state
   useEffect(() => {
@@ -237,6 +252,7 @@ const Chat = () => {
   return (
     <div className="h-full">
       <ChatUI
+        projectId={projectId}
         initialMessages={messages}
         onMessagesChange={handleMessagesChange}
         onSendMessage={handleSendMessage}

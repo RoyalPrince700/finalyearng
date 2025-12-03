@@ -25,6 +25,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/project', require('./routes/projectRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
 app.use('/api/conversations', require('./routes/conversationRoutes'));
+app.use('/api/saved-content', require('./routes/savedContentRoutes'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

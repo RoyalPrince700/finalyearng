@@ -249,6 +249,74 @@ const saveDraft = async (req, res) => {
   }
 };
 
+// @desc    Save specific project content (Preliminary, Chapter 1-5, Reference)
+// @route   POST /api/project/:id/saved-content
+// @access  Private
+const saveProjectContent = async (req, res) => {
+  try {
+    const { category, content } = req.body;
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found' });
+    }
+
+    if (project.user.toString() !== req.user.id) {
+      return res.status(401).json({ success: false, message: 'Not authorized' });
+    }
+
+    // Check if content for this category already exists
+    const existingIndex = project.savedContents.findIndex(
+      (item) => item.category === category
+    );
+
+    if (existingIndex !== -1) {
+      // Update existing
+      project.savedContents[existingIndex].content = content;
+      project.savedContents[existingIndex].savedAt = Date.now();
+    } else {
+      // Add new
+      project.savedContents.push({ category, content });
+    }
+
+    await project.save();
+
+    res.json({
+      success: true,
+      message: `Saved ${category} successfully`,
+      data: project.savedContents
+    });
+  } catch (error) {
+    console.error('Save content error:', error);
+    res.status(500).json({ success: false, message: 'Failed to save content' });
+  }
+};
+
+// @desc    Get saved project content
+// @route   GET /api/project/:id/saved-content
+// @access  Private
+const getSavedProjectContent = async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({ success: false, message: 'Project not found' });
+    }
+
+    if (project.user.toString() !== req.user.id) {
+      return res.status(401).json({ success: false, message: 'Not authorized' });
+    }
+
+    res.json({
+      success: true,
+      data: project.savedContents
+    });
+  } catch (error) {
+    console.error('Get saved content error:', error);
+    res.status(500).json({ success: false, message: 'Failed to get saved content' });
+  }
+};
+
 // TODO: Add export to DOCX functionality
 // TODO: Add export to PDF functionality
 // TODO: Add project sharing functionality
@@ -260,5 +328,7 @@ module.exports = {
   createProject,
   updateProject,
   deleteProject,
-  saveDraft
+  saveDraft,
+  saveProjectContent,
+  getSavedProjectContent
 };

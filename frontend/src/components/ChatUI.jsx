@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { aiAPI } from '../api/api';
+import SaveContentModal from './SaveContentModal';
+import { handleDownloadDocx, handleDownloadPdf } from '../utils/downloadUtils';
 
 const ChatUI = ({
   projectId,
@@ -19,7 +21,9 @@ const ChatUI = ({
   const [messages, setMessages] = useState(initialMessages || []);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-   const [hasError, setHasError] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [contentToSave, setContentToSave] = useState('');
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -158,95 +162,9 @@ const ChatUI = ({
     }
   };
 
-  const getDefaultFilename = (prefix, timestamp) => {
-    const date = new Date(timestamp || Date.now());
-    const safe =
-      date
-        .toISOString()
-        .replace(/[:.]/g, '-')
-        .slice(0, 19) || 'response';
-    return `${prefix}-${safe}`;
-  };
-
-  const handleDownloadDocx = async (message) => {
-    try {
-      const { Document, Packer, Paragraph, TextRun } = await import('docx');
-
-      const raw = message.content || '';
-      const lines = raw.split('\n');
-
-      const paragraphs = [];
-
-      if (lines.length > 0) {
-        // Treat first line as a bold title/heading
-        paragraphs.push(
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: lines[0].trim(),
-                bold: true
-              })
-            ]
-          })
-        );
-
-        const rest = lines.slice(1);
-        rest.forEach((line) => {
-          const text = line.trim();
-          // Preserve blank lines as spacing paragraphs
-          if (text === '') {
-            paragraphs.push(new Paragraph(''));
-          } else {
-            paragraphs.push(
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text
-                  })
-                ]
-              })
-            );
-          }
-        });
-      }
-
-      const doc = new Document({
-        sections: [
-          {
-            properties: {},
-            children: paragraphs.length ? paragraphs : [new Paragraph('')]
-          }
-        ]
-      });
-
-      const blob = await Packer.toBlob(doc);
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${getDefaultFilename('finalyearng-response', message.timestamp)}.docx`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Failed to generate DOCX:', error);
-    }
-  };
-
-  const handleDownloadPdf = async (message) => {
-    try {
-      const { jsPDF } = await import('jspdf');
-      const doc = new jsPDF();
-
-      const text = message.content || '';
-      const maxWidth = 180;
-      const lines = doc.splitTextToSize(text, maxWidth);
-
-      doc.text(lines, 10, 10);
-      doc.save(`${getDefaultFilename('finalyearng-response', message.timestamp)}.pdf`);
-    } catch (error) {
-      console.error('Failed to generate PDF:', error);
-    }
+  const handleOpenSaveModal = (content) => {
+    setContentToSave(content);
+    setIsSaveModalOpen(true);
   };
 
   return (
@@ -291,16 +209,23 @@ const ChatUI = ({
                       <button
                         type="button"
                         className="btn btn-ghost btn-xs"
-                        onClick={() => handleDownloadDocx(message)}
+                        onClick={() => handleDownloadDocx(message.content, 'finalyearng-response')}
                       >
                         DOCX
                       </button>
                       <button
                         type="button"
                         className="btn btn-ghost btn-xs"
-                        onClick={() => handleDownloadPdf(message)}
+                        onClick={() => handleDownloadPdf(message.content, 'finalyearng-response')}
                       >
                         PDF
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-xs"
+                        onClick={() => handleOpenSaveModal(message.content)}
+                      >
+                        Save
                       </button>
                     </div>
                   )}
@@ -380,6 +305,13 @@ const ChatUI = ({
           </form>
         </div>
       </div>
+
+      <SaveContentModal
+        isOpen={isSaveModalOpen}
+        onClose={() => setIsSaveModalOpen(false)}
+        projectId={projectId}
+        contentToSave={contentToSave}
+      />
     </div>
   );
 };

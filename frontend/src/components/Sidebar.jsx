@@ -10,11 +10,12 @@ import {
   LuPlus,
   LuPenLine,
   LuCheck,
-  LuX
+  LuX,
+  LuSave
 } from 'react-icons/lu';
 import { conversationAPI, projectAPI } from '../api/api';
 
-const Sidebar = ({ collapsed = false, onToggle }) => {
+const Sidebar = ({ collapsed = false, onToggle, isMobileOpen, onMobileClose }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [conversations, setConversations] = useState([]);
@@ -196,20 +197,29 @@ const Sidebar = ({ collapsed = false, onToggle }) => {
   const navLayoutClasses = collapsed ? 'justify-center' : 'gap-3';
 
   return (
-    <aside
-      className={`flex h-full flex-col bg-neutral-100 text-neutral-900 border-r border-neutral-200 transition-all duration-300 ${
-        collapsed ? 'w-20' : 'w-64'
-      }`}
-    >
-      {/* Collapse toggle */}
-      <div className="flex items-center justify-end h-12 px-2 border-b border-neutral-200">
+    <>
+      {/* Mobile Backdrop */}
+      {isMobileOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={onMobileClose}
+        />
+      )}
+
+      <aside
+        className={`fixed md:relative z-50 h-full flex flex-col bg-neutral-100 text-neutral-900 border-r border-neutral-200 transition-all duration-300 
+        ${isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+        ${collapsed ? 'md:w-20' : 'md:w-64'} w-64`}
+      >
+        {/* Collapse toggle */}
+      <div className={`flex items-center h-12 px-2 border-b border-neutral-200 ${collapsed ? 'justify-center' : 'justify-end'}`}>
         <button
           type="button"
-          onClick={onToggle}
+          onClick={isMobileOpen ? onMobileClose : onToggle}
           className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed && !isMobileOpen ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {collapsed ? (
+          {collapsed && !isMobileOpen ? (
             <LuChevronRight className="w-4 h-4" />
           ) : (
             <LuChevronLeft className="w-4 h-4" />
@@ -276,7 +286,7 @@ const Sidebar = ({ collapsed = false, onToggle }) => {
         </div>
       )}
 
-      {/* Navigation Links */}
+        {/* Navigation Links */}
       <nav className="px-2 py-4 flex-1 overflow-y-auto space-y-1 text-sm">
         <NavLink
           to="/"
@@ -294,8 +304,7 @@ const Sidebar = ({ collapsed = false, onToggle }) => {
         </NavLink>
 
         <NavLink
-          to="/topics"
-          state={{ resetChat: true }}
+          to="/saved-content"
           className={({ isActive }) =>
             `${baseNavItemClasses} ${navLayoutClasses} ${
               isActive
@@ -304,8 +313,8 @@ const Sidebar = ({ collapsed = false, onToggle }) => {
             }`
           }
         >
-          <LuSparkles className="w-4 h-4" />
-          {!collapsed && <span>New Project Topic</span>}
+          <LuSave className="w-4 h-4" />
+          {!collapsed && <span>Saved Content</span>}
         </NavLink>
 
         {/* Conversations list directly in main sidebar */}
@@ -382,7 +391,7 @@ const Sidebar = ({ collapsed = false, onToggle }) => {
       <div className="border-t border-neutral-200 px-3 py-3">
         <div
           className={`flex items-center ${
-            collapsed ? 'justify-center gap-2' : 'justify-between'
+            collapsed ? 'flex-col-reverse justify-center gap-4' : 'flex-row justify-between'
           }`}
         >
           <div className="flex items-center gap-3 min-w-0">
@@ -409,6 +418,7 @@ const Sidebar = ({ collapsed = false, onToggle }) => {
         </div>
       </div>
     </aside>
+    </>
   );
 };
 

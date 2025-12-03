@@ -5,7 +5,9 @@ const {
   createProject,
   updateProject,
   deleteProject,
-  saveDraft
+  saveDraft,
+  saveProjectContent,
+  getSavedProjectContent
 } = require('../controllers/projectController');
 const { protect } = require('../middleware/auth');
 
@@ -26,6 +28,10 @@ router.route('/:id')
 
 // Special routes
 router.post('/:id/save', saveDraft);
+
+router.route('/:id/saved-content')
+  .get(getSavedProjectContent)
+  .post(saveProjectContent);
 
 // TODO: Add export routes (DOCX, PDF)
 // TODO: Add sharing routes
