@@ -89,8 +89,9 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+    <div className="h-full overflow-y-auto bg-gray-50 w-full">
+      <div className="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8">
         <div>
           <div className="mx-auto w-16 h-16 bg-primary-600 rounded-full flex items-center justify-center">
             <span className="text-white font-bold text-xl">FY</span>
@@ -263,6 +264,7 @@ const Register = () => {
             </Link>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );

@@ -40,8 +40,9 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
+    <div className="h-full overflow-y-auto bg-neutral-50 w-full">
+      <div className="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <div className="avatar avatar-lg mx-auto bg-primary-900">
             <span className="text-white font-bold text-xl">FY</span>
@@ -123,6 +124,7 @@ const Login = () => {
             </Link>
           </div>
         </form>
+        </div>
       </div>
     </div>
   );
