@@ -23,6 +23,7 @@ export const UNIVERSITY_DATA = {
         'Agronomy',
         'Animal Production',
         'Crop Protection',
+        'Forestry and wildlife management',
         'Home Economics and Food Science',
         'Soil Science'
       ],
@@ -71,6 +72,7 @@ export const UNIVERSITY_DATA = {
         'Educational Management',
         'Educational Technology',
         'Human Kinetics Education',
+        'Health promotion and environmental health education',
         'Science Education',
         'Social Sciences Education',
         'Special Education'
