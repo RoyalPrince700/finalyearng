@@ -71,7 +71,11 @@ const Dashboard = () => {
         });
 
         const newConversation = response.data.data;
-        setCurrentConversation(newConversation);
+        const normalizedConversation = {
+          ...newConversation,
+          _id: newConversation._id || newConversation.id,
+        };
+        setCurrentConversation(normalizedConversation);
         window.dispatchEvent(new CustomEvent('conversationListRefresh'));
 
         // Seed local messages with the first user message
@@ -92,7 +96,9 @@ const Dashboard = () => {
     } else {
       // Add message to existing conversation
       try {
-        await conversationAPI.addMessage(currentConversation._id, {
+        const conversationId = currentConversation._id || currentConversation.id;
+
+        await conversationAPI.addMessage(conversationId, {
           role: 'user',
           content: message,
         });
@@ -107,7 +113,7 @@ const Dashboard = () => {
         ]);
 
         // Get AI response and append
-        await getAIResponse(currentConversation._id, message);
+        await getAIResponse(conversationId, message);
       } catch (error) {
         console.error('Failed to send message:', error);
       }

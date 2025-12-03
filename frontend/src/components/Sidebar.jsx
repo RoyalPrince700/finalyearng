@@ -8,8 +8,11 @@ import {
   LuChevronLeft,
   LuChevronRight,
   LuPlus,
+  LuPenLine,
+  LuCheck,
+  LuX
 } from 'react-icons/lu';
-import { conversationAPI } from '../api/api';
+import { conversationAPI, projectAPI } from '../api/api';
 
 const Sidebar = ({ collapsed = false, onToggle }) => {
   const { user, logout } = useAuth();
@@ -17,6 +20,11 @@ const Sidebar = ({ collapsed = false, onToggle }) => {
   const [conversations, setConversations] = useState([]);
   const [loadingConversations, setLoadingConversations] = useState(false);
   const [activeConversationMenuId, setActiveConversationMenuId] = useState(null);
+  const [projectTopic, setProjectTopic] = useState('');
+  const [isEditingTopic, setIsEditingTopic] = useState(false);
+  const [tempTopic, setTempTopic] = useState('');
+  const [projectId, setProjectId] = useState(null);
+  const [loadingTopic, setLoadingTopic] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -32,6 +40,24 @@ const Sidebar = ({ collapsed = false, onToggle }) => {
         .toUpperCase()
     : 'U';
 
+  const loadProjectTopic = async () => {
+    try {
+      setLoadingTopic(true);
+      const response = await projectAPI.getProjects();
+      const projects = response.data.data || [];
+      if (projects.length > 0) {
+        // Get the most recent project
+        const latestProject = projects[0];
+        setProjectTopic(latestProject.topic);
+        setProjectId(latestProject._id);
+      }
+    } catch (error) {
+      console.error('Failed to load project topic:', error);
+    } finally {
+      setLoadingTopic(false);
+    }
+  };
+
   const loadConversations = async () => {
     try {
       setLoadingConversations(true);
@@ -46,18 +72,69 @@ const Sidebar = ({ collapsed = false, onToggle }) => {
 
   useEffect(() => {
     loadConversations();
+    loadProjectTopic();
 
     const handleRefresh = () => {
       loadConversations();
     };
 
+    const handleTopicRefresh = () => {
+      loadProjectTopic();
+    };
+
     window.addEventListener('conversationListRefresh', handleRefresh);
+    window.addEventListener('projectTopicRefresh', handleTopicRefresh);
 
     return () => {
       window.removeEventListener('conversationListRefresh', handleRefresh);
+      window.removeEventListener('projectTopicRefresh', handleTopicRefresh);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleSaveTopic = async () => {
+    if (!tempTopic.trim()) {
+      setIsEditingTopic(false);
+      return;
+    }
+
+    try {
+      if (projectId) {
+        // Update existing project
+        await projectAPI.updateProject(projectId, { topic: tempTopic });
+        setProjectTopic(tempTopic);
+      } else {
+        // Create new project if none exists
+        // Note: We need a default department if creating new. 
+        // Ideally this flow should be "Create New Project" but for quick edit we can use user's dept
+        const response = await projectAPI.createProject({
+          title: tempTopic,
+          topic: tempTopic,
+          department: user.department || 'General'
+        });
+        setProjectId(response.data.data._id);
+        setProjectTopic(tempTopic);
+        
+        // Trigger refresh to update dashboard if needed
+        window.dispatchEvent(new CustomEvent('projectTopicRefresh'));
+      }
+    } catch (error) {
+      console.error('Failed to save topic:', error);
+      alert('Failed to save topic. Please try again.');
+    } finally {
+      setIsEditingTopic(false);
+    }
+  };
+
+  const startEditingTopic = () => {
+    setTempTopic(projectTopic);
+    setIsEditingTopic(true);
+  };
+
+  const cancelEditingTopic = () => {
+    setTempTopic('');
+    setIsEditingTopic(false);
+  };
 
   const handleConversationClick = (conversationId) => {
     navigate('/conversations', { state: { conversationId } });
@@ -139,6 +216,65 @@ const Sidebar = ({ collapsed = false, onToggle }) => {
           )}
         </button>
       </div>
+
+      {/* Project Topic Section - ONLY VISIBLE WHEN NOT COLLAPSED */}
+      {!collapsed && (
+        <div className="px-4 py-4 border-b border-neutral-200 bg-white">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-neutral-500 mb-2 flex items-center justify-between">
+            <span>Current Project Topic</span>
+            {!isEditingTopic && (
+              <button 
+                onClick={startEditingTopic}
+                className="text-neutral-400 hover:text-primary-600 transition-colors"
+                title="Edit Topic"
+              >
+                <LuPenLine className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+          
+          {isEditingTopic ? (
+            <div className="flex flex-col gap-2">
+              <textarea
+                value={tempTopic}
+                onChange={(e) => setTempTopic(e.target.value)}
+                className="w-full text-xs p-2 border border-neutral-300 rounded-md focus:ring-1 focus:ring-primary-500 focus:border-primary-500 outline-none resize-none"
+                rows={3}
+                placeholder="Enter your project topic..."
+                autoFocus
+              />
+              <div className="flex justify-end gap-2">
+                <button 
+                  onClick={cancelEditingTopic}
+                  className="p-1 text-neutral-500 hover:text-red-600 hover:bg-red-50 rounded"
+                  title="Cancel"
+                >
+                  <LuX className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={handleSaveTopic}
+                  className="p-1 text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded font-medium"
+                  title="Save"
+                >
+                  <LuCheck className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div 
+              className="text-sm font-medium text-neutral-800 line-clamp-3 cursor-pointer hover:text-primary-700 transition-colors"
+              onClick={startEditingTopic}
+              title={projectTopic || "Click to add a project topic"}
+            >
+              {loadingTopic ? (
+                <span className="text-neutral-400 italic">Loading...</span>
+              ) : (
+                projectTopic || <span className="text-neutral-400 italic">No topic set. Click to add one.</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Navigation Links */}
       <nav className="px-2 py-4 flex-1 overflow-y-auto space-y-1 text-sm">

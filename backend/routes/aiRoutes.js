@@ -2,6 +2,7 @@ const express = require('express');
 const {
   generateProjectTopics,
   generateProjectChapter,
+  generateProjectPreliminaryPages,
   generateProjectOutline,
   aiChatReview,
   aiChatTopicGeneration,
@@ -17,6 +18,7 @@ router.use(protect);
 // AI functionality routes
 router.post('/topics', generateProjectTopics);
 router.post('/generate', generateProjectChapter);
+router.post('/preliminary', generateProjectPreliminaryPages);
 router.post('/outline', generateProjectOutline);
 router.post('/chat', aiChatReview);
 router.post('/chat/topic-generation', aiChatTopicGeneration);

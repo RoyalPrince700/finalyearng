@@ -150,6 +150,105 @@ const ChatUI = ({
     }
   };
 
+  const formatTimestamp = (timestamp) => {
+    try {
+      return new Date(timestamp).toLocaleTimeString();
+    } catch {
+      return '';
+    }
+  };
+
+  const getDefaultFilename = (prefix, timestamp) => {
+    const date = new Date(timestamp || Date.now());
+    const safe =
+      date
+        .toISOString()
+        .replace(/[:.]/g, '-')
+        .slice(0, 19) || 'response';
+    return `${prefix}-${safe}`;
+  };
+
+  const handleDownloadDocx = async (message) => {
+    try {
+      const { Document, Packer, Paragraph, TextRun } = await import('docx');
+
+      const raw = message.content || '';
+      const lines = raw.split('\n');
+
+      const paragraphs = [];
+
+      if (lines.length > 0) {
+        // Treat first line as a bold title/heading
+        paragraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: lines[0].trim(),
+                bold: true
+              })
+            ]
+          })
+        );
+
+        const rest = lines.slice(1);
+        rest.forEach((line) => {
+          const text = line.trim();
+          // Preserve blank lines as spacing paragraphs
+          if (text === '') {
+            paragraphs.push(new Paragraph(''));
+          } else {
+            paragraphs.push(
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text
+                  })
+                ]
+              })
+            );
+          }
+        });
+      }
+
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: paragraphs.length ? paragraphs : [new Paragraph('')]
+          }
+        ]
+      });
+
+      const blob = await Packer.toBlob(doc);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${getDefaultFilename('finalyearng-response', message.timestamp)}.docx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to generate DOCX:', error);
+    }
+  };
+
+  const handleDownloadPdf = async (message) => {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+
+      const text = message.content || '';
+      const maxWidth = 180;
+      const lines = doc.splitTextToSize(text, maxWidth);
+
+      doc.text(lines, 10, 10);
+      doc.save(`${getDefaultFilename('finalyearng-response', message.timestamp)}.pdf`);
+    } catch (error) {
+      console.error('Failed to generate PDF:', error);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-white">
       {/* Messages */}
@@ -185,9 +284,27 @@ const ChatUI = ({
                   } flex-1`}
                 >
                 <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                <p className="text-[11px] mt-1 text-neutral-500">
-                  {new Date(message.timestamp).toLocaleTimeString()}
-                </p>
+                <div className="mt-1 flex items-center justify-between text-[11px] text-neutral-500">
+                  <span>{formatTimestamp(message.timestamp)}</span>
+                  {message.role === 'assistant' && !message.isError && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-xs"
+                        onClick={() => handleDownloadDocx(message)}
+                      >
+                        DOCX
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-xs"
+                        onClick={() => handleDownloadPdf(message)}
+                      >
+                        PDF
+                      </button>
+                    </div>
+                  )}
+                </div>
                 {message.role === 'assistant' &&
                   !message.isError &&
                   isSuggestionMessage(message.content) &&

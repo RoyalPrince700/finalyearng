@@ -1,4 +1,4 @@
-const { generateTopics, generateChapter, chatReview, callAI } = require('../services/aiService');
+const { generateTopics, generateChapter, generatePreliminaryPages, chatReview, callAI } = require('../services/aiService');
 const Project = require('../models/Project');
 
 // @desc    Generate project topics
@@ -82,6 +82,48 @@ const generateProjectChapter = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to generate chapter',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Generate preliminary pages
+// @route   POST /api/ai/preliminary
+// @access  Private
+const generateProjectPreliminaryPages = async (req, res) => {
+  try {
+    const { topic } = req.body;
+    const user = req.user;
+
+    // Validation
+    if (!topic) {
+      return res.status(400).json({
+        success: false,
+        message: 'Project topic is required'
+      });
+    }
+
+    const content = await generatePreliminaryPages({
+      topic,
+      name: user.name,
+      department: user.department,
+      faculty: user.faculty,
+      university: user.university,
+      degree: 'Bachelor of Science' // TODO: Add degree to user profile or request body
+    });
+
+    res.json({
+      success: true,
+      message: 'Preliminary pages generated successfully',
+      data: {
+        content
+      }
+    });
+  } catch (error) {
+    console.error('Generate preliminary pages error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate preliminary pages',
       error: error.message
     });
   }
@@ -211,36 +253,119 @@ const aiChatReview = async (req, res) => {
       });
     }
 
-    const response = await chatReview(messages, context || '');
+    let fullContext = context || '';
+    let project = null;
+
+    // If projectId is provided, fetch project to enrich context and save history
+    // If not provided (e.g. Dashboard), fetch latest project to ensure AI knows the user's context
+    try {
+      // Add user's academic details to context
+      const userDetails = `User Academic Profile:\nUniversity: "${req.user.university || 'Not specified'}"\nFaculty: "${req.user.faculty || 'Not specified'}"\nDepartment: "${req.user.department || 'Not specified'}"`;
+      fullContext = `${userDetails}\n\n${fullContext}`;
+
+      if (projectId) {
+        project = await Project.findOne({ _id: projectId, user: req.user.id });
+      } else {
+        project = await Project.findOne({ user: req.user.id }).sort({ updatedAt: -1 });
+      }
+      
+      if (project) {
+        // Append project topic and department to context to ensure AI stays on topic
+        const projectInfo = `User's Current Project:\nTopic: "${project.topic}"\nDepartment: "${project.department}"`;
+        fullContext = `${projectInfo}\n\n${fullContext}`;
+      }
+    } catch (dbError) {
+      console.error('Error fetching project for chat context:', dbError);
+      // Continue without project context if DB fails
+    }
+
+    // Check if the user is asking to generate/write/create a specific chapter
+    const lastUserMessage = [...messages].reverse().find(m => m.role === 'user');
+    if (lastUserMessage) {
+      const content = lastUserMessage.content.toLowerCase();
+      // Regex to detect intent: "write/generate/create/send" + "chapter X"
+      const chapterMatch = content.match(/(?:write|generate|create|send|give me|make)\s+(?:chapter|section)\s+(\d+)/i);
+      
+      if (chapterMatch) {
+        const requestedChapter = parseInt(chapterMatch[1]);
+        if (requestedChapter >= 1 && requestedChapter <= 5) {
+          // If we have a project context, we can route this to the specialized chapter generator
+          // which guarantees the correct format with references
+          if (projectId && project) {
+             console.log(`Routing chat request to Chapter Generator for Chapter ${requestedChapter}`);
+             
+             // Call the specialized generateChapter service instead of generic chat
+             const { generateChapter } = require('../services/aiService');
+             const chapterContent = await generateChapter({
+               topic: project.topic,
+               chapterNumber: requestedChapter,
+               department: project.department,
+               existingContent: '' // Start fresh for this chapter request
+             });
+
+             // Return the structured chapter content as the AI response
+             const timestamp = new Date();
+             
+             // Persist history
+             try {
+                project.chatHistory.push({
+                  role: 'user',
+                  content: lastUserMessage.content,
+                  chapterNumber: requestedChapter,
+                  timestamp
+                });
+
+                project.chatHistory.push({
+                  role: 'assistant',
+                  content: chapterContent,
+                  chapterNumber: requestedChapter,
+                  timestamp
+                });
+                await project.save();
+             } catch (err) {
+                console.error('Failed to save chapter generation to history:', err);
+             }
+
+             return res.json({
+               success: true,
+               message: 'Chapter generated successfully via chat',
+               data: {
+                 response: chapterContent,
+                 timestamp
+               }
+             });
+          }
+        }
+      }
+    }
+
+    const response = await chatReview(messages, fullContext);
 
     const timestamp = new Date();
 
-    // If a projectId is provided, persist this interaction into the project's chatHistory
-    if (projectId) {
+    // If a projectId is provided and project was found, persist this interaction
+    // We only persist to project.chatHistory if the user was explicitly in that project context (projectId provided)
+    if (projectId && project) {
       try {
-        const project = await Project.findOne({ _id: projectId, user: req.user.id });
+        // Use the last user message in the array as the one that triggered this response
+        const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user');
 
-        if (project) {
-          // Use the last user message in the array as the one that triggered this response
-          const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user');
+        if (lastUserMessage) {
+          project.chatHistory.push({
+            role: 'user',
+            content: lastUserMessage.content,
+            chapterNumber: Number.isInteger(chapterNumber) ? chapterNumber : 0,
+            timestamp
+          });
 
-          if (lastUserMessage) {
-            project.chatHistory.push({
-              role: 'user',
-              content: lastUserMessage.content,
-              chapterNumber: Number.isInteger(chapterNumber) ? chapterNumber : 0,
-              timestamp
-            });
+          project.chatHistory.push({
+            role: 'assistant',
+            content: response,
+            chapterNumber: Number.isInteger(chapterNumber) ? chapterNumber : 0,
+            timestamp
+          });
 
-            project.chatHistory.push({
-              role: 'assistant',
-              content: response,
-              chapterNumber: Number.isInteger(chapterNumber) ? chapterNumber : 0,
-              timestamp
-            });
-
-            await project.save();
-          }
+          await project.save();
         }
       } catch (persistError) {
         console.error('Failed to persist chat history to project:', persistError);
@@ -348,6 +473,7 @@ const getAIModels = async (req, res) => {
 module.exports = {
   generateProjectTopics,
   generateProjectChapter,
+  generateProjectPreliminaryPages,
   generateProjectOutline,
   aiChatReview,
   aiChatTopicGeneration,

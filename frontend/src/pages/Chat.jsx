@@ -85,7 +85,11 @@ const Chat = () => {
         });
 
         const newConversation = response.data.data;
-        setCurrentConversation(newConversation);
+        const normalizedConversation = {
+          ...newConversation,
+          _id: newConversation._id || newConversation.id,
+        };
+        setCurrentConversation(normalizedConversation);
         window.dispatchEvent(new CustomEvent('conversationListRefresh'));
 
         // Seed local messages with the first user message
@@ -98,38 +102,81 @@ const Chat = () => {
         ];
         setMessages(initialMessages);
 
-        // Get AI response and append to conversation
-        await getAIResponse(newConversation.id, message);
+        // Get AI response and append to conversation, preserving history
+        await getAIResponse(newConversation.id, message, initialMessages);
       } catch (error) {
         console.error('Failed to create conversation:', error);
       }
     } else {
       // Add message to existing conversation
       try {
-        await conversationAPI.addMessage(currentConversation._id, {
+        const userMessage = {
+          role: 'user',
+          content: message,
+          timestamp: new Date().toISOString(),
+        };
+
+        const conversationId = currentConversation._id || currentConversation.id;
+
+        await conversationAPI.addMessage(conversationId, {
           role: 'user',
           content: message,
         });
 
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: 'user',
-            content: message,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
+        const updatedMessages = [...messages, userMessage];
+        setMessages(updatedMessages);
 
-        // Get AI response and append
-        await getAIResponse(currentConversation._id, message);
+        // Get AI response and append, preserving history
+        await getAIResponse(conversationId, message, updatedMessages);
       } catch (error) {
         console.error('Failed to send message:', error);
       }
     }
   };
 
-  const getAIResponse = async (conversationId, userMessage) => {
+  const getAIResponse = async (conversationId, userMessage, historyMessages = []) => {
     try {
+      const baseMessages =
+        historyMessages && historyMessages.length
+          ? historyMessages
+          : [
+              {
+                role: 'user',
+                content: userMessage,
+              },
+            ];
+
+      // Build a compact context window to avoid sending extremely long histories.
+      // We approximate token usage using character length and keep the last few
+      // messages plus the very first user message (which often contains the topic).
+      const maxChars = 6000;
+      let runningChars = 0;
+      const windowMessages = [];
+
+      for (let i = baseMessages.length - 1; i >= 0; i -= 1) {
+        const m = baseMessages[i];
+        const text = m?.content || '';
+        if (runningChars + text.length > maxChars && windowMessages.length > 0) {
+          break;
+        }
+        windowMessages.unshift(m);
+        runningChars += text.length;
+      }
+
+      // Ensure earliest user message (often where topic is stated) is present.
+      const firstUserMessage = baseMessages.find((m) => m.role === 'user');
+      if (
+        firstUserMessage &&
+        !windowMessages.some((m) => m === firstUserMessage)
+      ) {
+        windowMessages.unshift(firstUserMessage);
+      }
+
+      const payloadMessages = windowMessages.map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+
       // Use existing AI chat endpoint to generate a reply
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
@@ -138,7 +185,7 @@ const Chat = () => {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
         body: JSON.stringify({
-          messages: [{ role: 'user', content: userMessage }],
+          messages: payloadMessages,
         }),
       });
 
