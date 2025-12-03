@@ -11,6 +11,13 @@ connectDB();
 
 const app = express();
 
+// Request logging middleware
+app.use((req, res, next) => {
+  console.log(`[Server] Incoming Request: ${req.method} ${req.url}`);
+  console.log(`[Server] Headers:`, JSON.stringify(req.headers, null, 2));
+  next();
+});
+
 // Middleware
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
