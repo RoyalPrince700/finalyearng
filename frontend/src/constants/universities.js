@@ -25,7 +25,8 @@ export const UNIVERSITY_DATA = {
         'Crop Protection',
         'Forestry and wildlife management',
         'Home Economics and Food Science',
-        'Soil Science'
+        'Soil Science',
+        'Aquaculture and Fishery'
       ],
       'Faculty of Arts': [
         'Arabic',
@@ -56,7 +57,8 @@ export const UNIVERSITY_DATA = {
         'Pathology',
         'Psychiatry',
         'Radiology',
-        'Surgery'
+        'Surgery',
+        'Nursing'
       ],
       'Faculty of Communication and Information Sciences': [
         'Computer Science',
