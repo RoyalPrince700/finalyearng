@@ -27,7 +27,8 @@ const Sidebar = ({ collapsed = false, onToggle, isMobileOpen, onMobileClose }) =
   const [projectId, setProjectId] = useState(null);
   const [loadingTopic, setLoadingTopic] = useState(false);
 
-  const handleLogout = () => {
+  const handleLogout = (e) => {
+    e.stopPropagation();
     logout();
     navigate('/login');
   };
@@ -383,13 +384,20 @@ const Sidebar = ({ collapsed = false, onToggle, isMobileOpen, onMobileClose }) =
           </div>
         )}
 
-        <button
-          type="button"
-          className={`${baseNavItemClasses} ${navLayoutClasses} text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 w-full text-left`}
+        <NavLink
+          to="/settings"
+          onClick={() => isMobileOpen && onMobileClose && onMobileClose()}
+          className={({ isActive }) =>
+            `${baseNavItemClasses} ${navLayoutClasses} ${
+              isActive
+                ? 'bg-neutral-100 text-neutral-900'
+                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+            }`
+          }
         >
           <LuSettings className="w-4 h-4" />
-          {!collapsed && <span className="flex-1">Settings (coming soon)</span>}
-        </button>
+          {!collapsed && <span>Settings</span>}
+        </NavLink>
       </nav>
 
       {/* User section / Logout */}
@@ -416,7 +424,7 @@ const Sidebar = ({ collapsed = false, onToggle, isMobileOpen, onMobileClose }) =
           </div>
           <button
             type="button"
-            onClick={handleLogout}
+            onClick={(e) => handleLogout(e)}
             className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
           >
             <LuLogOut className="w-4 h-4" />
