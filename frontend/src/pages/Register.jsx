@@ -9,7 +9,7 @@ const Register = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    university: 'University of Ilorin', // Default to University of Ilorin
+    university: '', // No default university - user must select
     faculty: '',
     department: ''
   });

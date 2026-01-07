@@ -142,6 +142,7 @@ const Chat = () => {
         setMessages(updatedMessages);
 
         // Get AI response and append, preserving history
+        // We pass the updatedMessages which now includes the user message
         await getAIResponse(conversationId, message, updatedMessages);
       } catch (error) {
         console.error('Failed to send message:', error);
@@ -151,20 +152,13 @@ const Chat = () => {
 
   const getAIResponse = async (conversationId, userMessage, historyMessages = []) => {
     try {
-      const baseMessages =
-        historyMessages && historyMessages.length
-          ? historyMessages
-          : [
-              {
-                role: 'user',
-                content: userMessage,
-              },
-            ];
+      // Use the provided historyMessages which includes the latest user message
+      const baseMessages = historyMessages;
 
       // Build a compact context window to avoid sending extremely long histories.
-      // We approximate token usage using character length and keep the last few
-      // messages plus the very first user message (which often contains the topic).
-      const maxChars = 6000;
+      // Gemini Flash has a huge context window, so we can afford to send more history
+      // to ensure accurate topic referencing and context preservation.
+      const maxChars = 30000;
       let runningChars = 0;
       const windowMessages = [];
 
@@ -179,6 +173,7 @@ const Chat = () => {
       }
 
       // Ensure earliest user message (often where topic is stated) is present.
+      // This is crucial for maintaining the original project context.
       const firstUserMessage = baseMessages.find((m) => m.role === 'user');
       if (
         firstUserMessage &&
@@ -206,14 +201,16 @@ const Chat = () => {
         content: aiMessage,
       });
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: aiMessage,
-          timestamp: new Date().toISOString(),
-        },
-      ]);
+      const assistantMessage = {
+        role: 'assistant',
+        content: aiMessage,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Update state with the assistant message. 
+      // Important: we use the functional update to ensure we don't miss the user message 
+      // that was added just before calling getAIResponse.
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Failed to get AI response:', error);
       setMessages((prev) => [

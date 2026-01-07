@@ -13,6 +13,7 @@ import ProjectEditor from './pages/ProjectEditor';
 import Chat from './pages/Chat';
 import SavedContent from './pages/SavedContent';
 import AdminDashboard from './pages/AdminDashboard';
+import Settings from './pages/Settings';
 
 // Protected Route Component with ChatGPT-style layout
 const ProtectedRoute = ({ children }) => {
@@ -82,6 +83,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <SavedContent />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute>
+                <Settings />
               </ProtectedRoute>
             }
           />

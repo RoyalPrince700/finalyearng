@@ -175,9 +175,32 @@ IMPORTANT: return the content in plain text format. Maintain the spacing and cap
 `,
 
   CHAT_REVIEW: `
-You are a direct assistant for Nigerian university students writing final year projects. NEVER start responses with greetings like "Welcome" or "Hello". NEVER introduce yourself as "FinalYearNG AI".
+You are a direct assistant for Nigerian university students writing final year projects.
 
 IMPORTANT: Use plain text only. No asterisks, no markdown, no special formatting.
+
+    GREETING AND GUIDANCE:
+    If the user greets you (e.g., "hi", "hello", "good morning") or sends a short message without a specific request:
+    - Respond warmly and introduce yourself as their project writing assistant.
+    - Call the user by their full name (provided in the context as Name) to make it personal.
+    - IMPORTANT: Tell the user that they must add their project topic to the "Current Project Topic" section before they proceed. 
+    - Explain that:
+      - On Desktop, this section is in the sidebar on the left.
+      - On Mobile, it is inside the hamburger menu.
+    - Advise that:
+      - If they already have a topic, they should add it there immediately.
+      - If they don't have a topic yet, they can ask you to generate one. 
+      - Once they find or choose a topic, they should make sure to add it to that section.
+    - Explicitly mention that you can:
+      1. Suggest high-quality project topics based on their department.
+      2. Generate complete chapters (Chapter 1 to 5) for their chosen topic.
+      3. Provide a full project outline and structure.
+      4. Assist with preliminary pages (Abstract, Acknowledgement, etc.).
+    - Provide clear examples of how they can ask, such as:
+      - "Give me 5 project topics for Pharmaceutical Microbiology and Biotechnology"
+      - "Write Chapter 1 for the topic: [Their Topic]"
+      - "Generate an abstract for my project"
+    - Always reference their department (if known from context) to make the guidance personal.
 
     CRITICAL INSTRUCTION:
     If the user asks you to WRITE, CREATE, GENERATE, SEND, or "GIVE ME" a chapter (e.g., "write chapter 1", "give me chapter 2", "send chapter 3"):
@@ -208,6 +231,13 @@ IMPORTANT: Use plain text only. No asterisks, no markdown, no special formatting
     - Help with structure and flow
     - Assist with APA formatting
 
+    TOPIC REFINEMENT OR SELECTION:
+    If the user selects or references a specific topic from a previous list (e.g., "I like topic 4", "Tell me more about the second one", "Refine the last one"):
+    - CRITICAL: Carefully look back at the conversation history to identify the EXACT topic title and number they are referring to.
+    - Do NOT guess or provide information for a different topic number.
+    - If they ask to "refine" or "edit" a topic, provide a more detailed and academically robust version of that specific topic.
+    - If they ask for "more in that line", provide new topics that share the same research domain or methodology as the one they liked.
+
     Keep initial responses comprehensive but focused. Be proactive, not just ask questions.
 `,
 
@@ -215,6 +245,18 @@ IMPORTANT: Use plain text only. No asterisks, no markdown, no special formatting
 You are FinalYearNG AI, focused on helping Nigerian university students generate final year project topics.
 
 IMPORTANT: Always reference the user's faculty and department. The user's information will be provided in the context.
+
+    GREETING AND GUIDANCE:
+    If the user greets you (e.g., "hi", "hello") or is just starting:
+    - Respond warmly and introduce yourself as their Topic Generation Assistant.
+    - Call the user by their full name (provided in the context as Name) to make it personal.
+    - IMPORTANT: Let the user know that once they find a topic they like, they should add it to the "Current Project Topic" section.
+    - Explain that:
+      - On Desktop, this section is in the sidebar on the left.
+      - On Mobile, it is inside the hamburger menu.
+    - Mention that you can suggest unique, researchable topics tailored to their specific department and faculty.
+    - Tell them they can ask for topics in a specific domain or provide keywords for better results.
+    - Example: "I can help you find the perfect project topic for Pharmaceutical Microbiology and Biotechnology. You can say 'Suggest 5 topics for me' or 'Give me topics related to clinical pharmacy'."
 
 Be direct and focused on project topic generation. Ask specific questions to understand their needs, then generate relevant topics.
 
@@ -249,32 +291,45 @@ const callAI = async (model = DEFAULT_MODEL, messages, taskType = 'general') => 
     // Debug: confirm GEMINI API key is loaded from environment
     console.log('GEMINI_API_KEY loaded:', !!process.env.GEMINI_API_KEY);
 
-    // Add system prompt based on task type
+    // Get system prompt based on task type
     const systemMessage = SYSTEM_PROMPTS[taskType] || SYSTEM_PROMPTS.CHAT_REVIEW;
 
+    // Filter and merge consecutive messages of the same role to satisfy Gemini's requirements
+    const mergedMessages = [];
+    messages.forEach((msg) => {
+      if (mergedMessages.length > 0 && mergedMessages[mergedMessages.length - 1].role === msg.role) {
+        // Merge with previous message of same role
+        mergedMessages[mergedMessages.length - 1].content += `\n\n${msg.content}`;
+      } else {
+        mergedMessages.push({ ...msg });
+      }
+    });
+
     // Convert OpenAI-style messages to Gemini format
-    const geminiMessages = convertMessagesToGemini([
-      { role: 'user', content: systemMessage }, // Gemini doesn't have system role, so we add it as a user message
-      ...messages
-    ]);
+    const geminiMessages = convertMessagesToGemini(mergedMessages);
+
+    const payload = {
+      contents: geminiMessages,
+      systemInstruction: {
+        parts: [{ text: systemMessage }]
+      },
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 4000,
+        topP: 0.9,
+        responseMimeType: "text/plain"
+      },
+      safetySettings: [
+        {
+          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+          threshold: "BLOCK_ONLY_HIGH"
+        }
+      ]
+    };
 
     const response = await axios.post(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        contents: geminiMessages,
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 4000,
-          topP: 0.9,
-          responseMimeType: "text/plain"
-        },
-        safetySettings: [
-          {
-            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-            threshold: "BLOCK_ONLY_HIGH"
-          }
-        ]
-      },
+      payload,
       {
         headers: {
           'Content-Type': 'application/json'
@@ -327,21 +382,7 @@ const callAI = async (model = DEFAULT_MODEL, messages, taskType = 'general') => 
           // Simple retry mechanism
            const retryResponse = await axios.post(
             `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
-            {
-              contents: geminiMessages,
-              generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 4000,
-                topP: 0.9,
-                responseMimeType: "text/plain"
-              },
-              safetySettings: [
-                {
-                  category: "HARM_CATEGORY_DANGEROUS_CONTENT",
-                  threshold: "BLOCK_ONLY_HIGH"
-                }
-              ]
-            },
+            payload,
             {
               headers: { 'Content-Type': 'application/json' },
               timeout: 60000
@@ -457,14 +498,35 @@ const generatePreliminaryPages = async ({ topic, name, department, faculty, univ
  * @returns {Promise<string>} - AI response
  */
 const chatReview = async (messages, context = '') => {
-  const contextMessage = context ?
-    `Current project context: ${context}\n\nUser question:` :
-    'User question:';
+  // Filter out system messages and ensure we have messages to work with
+  const conversationMessages = messages.filter(msg => msg.role !== 'system');
+  
+  if (conversationMessages.length === 0) {
+    return "How can I help you today?";
+  }
 
-  const formattedMessages = messages.map(msg => ({
-    role: msg.role,
-    content: `${contextMessage} ${msg.content}`
-  }));
+  const contextPrefix = context ? `[CONTEXT: ${context}]\n\n` : '';
+  let contextApplied = false;
+  
+  const formattedMessages = conversationMessages.map((msg) => {
+    // Prepend context to the first USER message we find in the window
+    if (!contextApplied && msg.role === 'user') {
+      contextApplied = true;
+      return {
+        role: msg.role,
+        content: `${contextPrefix}${msg.content}`
+      };
+    }
+    return {
+      role: msg.role,
+      content: msg.content
+    };
+  });
+
+  // If no user message was found (unlikely), prepend to the first message regardless
+  if (!contextApplied && formattedMessages.length > 0) {
+    formattedMessages[0].content = `${contextPrefix}${formattedMessages[0].content}`;
+  }
 
   return await callAI(DEFAULT_MODEL, formattedMessages, 'CHAT_REVIEW');
 };
@@ -478,25 +540,31 @@ const chatReview = async (messages, context = '') => {
 const chatTopicGeneration = async (messages, userContext) => {
   // Build context message with user information
   const userInfoContext = `User Information:
+- Name: ${userContext.name}
 - University: ${userContext.university}
 - Faculty: ${userContext.faculty}
 - Department: ${userContext.department}
 
-IMPORTANT: Always reference the user's faculty (${userContext.faculty}) and department (${userContext.department}) when generating topics. Make sure all topics are relevant to their field of study.`;
+IMPORTANT: Always address the user by their name (${userContext.name}) and reference their faculty (${userContext.faculty}) and department (${userContext.department}) when generating topics. Make sure all topics are relevant to their field of study.`;
 
   // Filter out system messages and prepare messages for AI
   const conversationMessages = messages.filter(msg => msg.role !== 'system');
   
-  // Add user context to the first user message if it exists
-  if (conversationMessages.length > 0 && conversationMessages[0].role === 'user') {
-    conversationMessages[0] = {
-      ...conversationMessages[0],
-      content: `${userInfoContext}\n\n${conversationMessages[0].content}`
-    };
-  }
+  // Find the first user message and prepend the context to it
+  let contextApplied = false;
+  const formattedMessages = conversationMessages.map((msg) => {
+    if (!contextApplied && msg.role === 'user') {
+      contextApplied = true;
+      return {
+        ...msg,
+        content: `${userInfoContext}\n\n${msg.content}`
+      };
+    }
+    return { ...msg };
+  });
 
   // Use the topic generation chat system prompt
-  return await callAI(DEFAULT_MODEL, conversationMessages, 'TOPIC_GENERATION_CHAT');
+  return await callAI(DEFAULT_MODEL, formattedMessages, 'TOPIC_GENERATION_CHAT');
 };
 
 // Helper function to convert OpenAI-style messages to Gemini format

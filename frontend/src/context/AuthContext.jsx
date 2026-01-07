@@ -94,6 +94,23 @@ export const AuthProvider = ({ children }) => {
     setUser(prevUser => ({ ...prevUser, ...userData }));
   };
 
+  const updateProfile = async (profileData) => {
+    try {
+      const response = await api.put('/auth/profile', profileData);
+      const updatedUser = response.data.data;
+
+      // Update local user state
+      setUser(updatedUser);
+
+      return { success: true, message: 'Profile updated successfully' };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to update profile'
+      };
+    }
+  };
+
   const value = {
     user,
     token,
@@ -102,6 +119,7 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateUser,
+    updateProfile,
     isAuthenticated: !!token
   };
 

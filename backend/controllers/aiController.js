@@ -259,8 +259,8 @@ const aiChatReview = async (req, res) => {
     // If projectId is provided, fetch project to enrich context and save history
     // If not provided (e.g. Dashboard), fetch latest project to ensure AI knows the user's context
     try {
-      // Add user's academic details to context
-      const userDetails = `User Academic Profile:\nUniversity: "${req.user.university || 'Not specified'}"\nFaculty: "${req.user.faculty || 'Not specified'}"\nDepartment: "${req.user.department || 'Not specified'}"`;
+      // Add user's academic details and name to context
+      const userDetails = `User Profile:\nName: "${req.user.name || 'Student'}"\nUniversity: "${req.user.university || 'Not specified'}"\nFaculty: "${req.user.faculty || 'Not specified'}"\nDepartment: "${req.user.department || 'Not specified'}"`;
       fullContext = `${userDetails}\n\n${fullContext}`;
 
       if (projectId) {
@@ -409,6 +409,7 @@ const aiChatTopicGeneration = async (req, res) => {
     // Get user information for context
     const user = req.user;
     const userContext = {
+      name: user.name || 'Student',
       university: user.university || 'Not specified',
       faculty: user.faculty || 'Not specified',
       department: user.department || 'Not specified'

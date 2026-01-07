@@ -395,9 +395,11 @@ const Sidebar = ({ collapsed = false, onToggle, isMobileOpen, onMobileClose }) =
       {/* User section / Logout */}
       <div className="border-t border-neutral-200 px-3 py-3">
         <div
-          className={`flex items-center ${
+          className={`flex items-center cursor-pointer hover:bg-neutral-50 rounded-lg p-2 -m-2 transition-colors ${
             collapsed ? 'flex-col-reverse justify-center gap-4' : 'flex-row justify-between'
           }`}
+          onClick={() => navigate('/settings')}
+          title="Click to open settings"
         >
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-xs font-semibold text-primary-900">

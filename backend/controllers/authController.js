@@ -192,15 +192,67 @@ const updateUserRole = async (req, res) => {
   }
 };
 
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateProfile = async (req, res) => {
+  try {
+    const { name, department, faculty, university } = req.body;
+
+    // Validation
+    if (!name || !department || !faculty || !university) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide all required fields'
+      });
+    }
+
+    // Build update object
+    const updateFields = {
+      name,
+      department,
+      faculty,
+      university
+    };
+
+    // Update user
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      updateFields,
+      { new: true, runValidators: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      data: user
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update profile',
+      error: error.message
+    });
+  }
+};
+
 // TODO: Add logout functionality (client-side token removal)
 // TODO: Add password reset functionality
 // TODO: Add email verification
-// TODO: Add profile update functionality
 
 module.exports = {
   register,
   login,
   getMe,
   getAllUsers,
-  updateUserRole
+  updateUserRole,
+  updateProfile
 };
