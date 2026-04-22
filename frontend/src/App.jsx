@@ -7,6 +7,7 @@ import AuthenticatedLayout from './components/AuthenticatedLayout';
 // Page Components
 import Login from './pages/Login';
 import Register from './pages/Register';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import Dashboard from './pages/Dashboard';
 import TopicGenerator from './pages/TopicGenerator';
 import ProjectEditor from './pages/ProjectEditor';
@@ -44,6 +45,7 @@ function App() {
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
           {/* Protected Routes (use sidebar + navbar layout) */}
           <Route

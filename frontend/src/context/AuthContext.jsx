@@ -111,6 +111,43 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updatePassword = async (passwordData) => {
+    try {
+      const response = await api.put('/auth/password', passwordData);
+
+      return {
+        success: true,
+        message: response.data?.message || 'Password updated successfully'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to update password'
+      };
+    }
+  };
+
+  const deleteAccount = async () => {
+    try {
+      const response = await api.delete('/auth/account');
+
+      localStorage.removeItem('token');
+      delete api.defaults.headers.common['Authorization'];
+      setUser(null);
+      setToken(null);
+
+      return {
+        success: true,
+        message: response.data?.message || 'Account deleted successfully'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to delete account'
+      };
+    }
+  };
+
   const value = {
     user,
     token,
@@ -120,6 +157,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateUser,
     updateProfile,
+    updatePassword,
+    deleteAccount,
     isAuthenticated: !!token
   };
 

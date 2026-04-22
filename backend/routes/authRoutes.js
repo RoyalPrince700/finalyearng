@@ -1,5 +1,5 @@
 const express = require('express');
-const { register, login, getMe, getAllUsers, updateUserRole, updateProfile } = require('../controllers/authController');
+const { register, login, getMe, getAllUsers, updateUserRole, updateProfile, updatePassword, deleteAccount } = require('../controllers/authController');
 const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
@@ -11,6 +11,8 @@ router.post('/login', login);
 // Protected routes
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);
+router.put('/password', protect, updatePassword);
+router.delete('/account', protect, deleteAccount);
 
 // Admin routes
 router.get('/users', protect, authorize('admin'), getAllUsers);

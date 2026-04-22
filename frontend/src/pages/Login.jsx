@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import PublicFooter from '../components/PublicFooter';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -40,8 +41,9 @@ const Login = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto bg-neutral-50 w-full">
-      <div className="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-neutral-50 w-full">
+      <div className="flex min-h-screen flex-col">
+      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <div className="avatar avatar-lg mx-auto bg-primary-900">
@@ -125,6 +127,8 @@ const Login = () => {
           </div>
         </form>
         </div>
+      </div>
+      <PublicFooter />
       </div>
     </div>
   );

@@ -1,5 +1,8 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Project = require('../models/Project');
+const SavedContent = require('../models/SavedContent');
+const Conversation = require('../models/Conversation');
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -244,6 +247,100 @@ const updateProfile = async (req, res) => {
   }
 };
 
+// @desc    Update current user's password
+// @route   PUT /api/auth/password
+// @access  Private
+const updatePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide your current password and a new password'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters long'
+      });
+    }
+
+    const user = await User.findById(req.user.id).select('+password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const isMatch = await user.matchPassword(currentPassword);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Current password is incorrect'
+      });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password updated successfully'
+    });
+  } catch (error) {
+    console.error('Update password error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update password',
+      error: error.message
+    });
+  }
+};
+
+// @desc    Delete current user account
+// @route   DELETE /api/auth/account
+// @access  Private
+const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    await Promise.all([
+      Project.deleteMany({ user: userId }),
+      SavedContent.deleteMany({ user: userId }),
+      Conversation.deleteMany({ user: userId })
+    ]);
+
+    await User.findByIdAndDelete(userId);
+
+    res.json({
+      success: true,
+      message: 'Account deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete account',
+      error: error.message
+    });
+  }
+};
+
 // TODO: Add logout functionality (client-side token removal)
 // TODO: Add password reset functionality
 // TODO: Add email verification
@@ -254,5 +351,7 @@ module.exports = {
   getMe,
   getAllUsers,
   updateUserRole,
-  updateProfile
+  updateProfile,
+  updatePassword,
+  deleteAccount
 };

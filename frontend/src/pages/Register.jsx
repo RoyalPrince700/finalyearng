@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getUniversities, getFaculties, getDepartments } from '../constants/universities';
+import PublicFooter from '../components/PublicFooter';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -89,8 +90,9 @@ const Register = () => {
   };
 
   return (
-    <div className="h-full overflow-y-auto bg-gray-50 w-full">
-      <div className="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 w-full">
+      <div className="flex min-h-screen flex-col">
+      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
         <div>
           <div className="mx-auto w-16 h-16 bg-primary-600 rounded-full flex items-center justify-center">
@@ -265,6 +267,8 @@ const Register = () => {
           </div>
         </form>
         </div>
+      </div>
+      <PublicFooter />
       </div>
     </div>
   );
