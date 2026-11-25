@@ -87,7 +87,7 @@ const conversationSchema = new mongoose.Schema({
   // AI model used for this conversation
   aiModel: {
     type: String,
-    default: 'gemini-flash-latest'
+    default: 'gemini-flash-lite-latest'
   }
 }, {
   timestamps: true

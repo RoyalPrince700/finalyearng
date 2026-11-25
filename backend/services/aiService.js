@@ -5,7 +5,7 @@ const axios = require('axios');
 // Current implementation uses Google Gemini AI API
 
 const AI_MODELS = {
-  GEMINI_FLASH: 'gemini-flash-latest',
+  GEMINI_FLASH: 'gemini-flash-lite-latest',
   GEMINI_PRO: 'gemini-pro-latest',
   GEMINI_2_5_FLASH: 'gemini-2.5-flash'
 };

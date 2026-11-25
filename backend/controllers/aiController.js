@@ -446,7 +446,7 @@ const getAIModels = async (req, res) => {
   try {
     // Return available Gemini models
     const models = [
-      { id: 'gemini-flash-latest', name: 'Gemini Flash Latest', description: 'Google Gemini Flash - Fast and efficient' },
+      { id: 'gemini-flash-lite-latest', name: 'Gemini Flash Lite', description: 'Google Gemini Flash Lite - Fast and currently available' },
       { id: 'gemini-pro-latest', name: 'Gemini Pro Latest', description: 'Google Gemini Pro - Most capable model' },
       { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: 'Google Gemini 2.5 Flash - Advanced model' }
     ];
